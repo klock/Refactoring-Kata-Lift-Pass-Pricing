@@ -34,7 +34,7 @@ public class PricesTest {
             given().
                 port(4567).
             when().
-                // construct some proper url parameters
+                param("type", "1jour").
                 get("/prices").
             then().
                 assertThat().
@@ -43,7 +43,7 @@ public class PricesTest {
                     contentType("application/json").
             extract().jsonPath();
 
-        assertEquals("putSomehtingHere", response.get("putSomehtingHere"));
+        assertEquals(35, response.getInt("cost"));
     }
 
 }
