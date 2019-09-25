@@ -18,6 +18,7 @@ public class Prices {
     public static Connection createApp() throws SQLException {
 
         final Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/lift_pass", "root", "mysql");
+        final PricesService service = new PricesService(connection);
 
         port(4567);
 
@@ -26,7 +27,7 @@ public class Prices {
             int price = Integer.parseInt(costQP);
             String type = req.queryParams(PricesRoutes.QP.TYPE);
 
-            PricesService.insertBasePrice(connection, price, type);
+            service.insertBasePrice(price, type);
 
             return "";
         });
@@ -40,7 +41,7 @@ public class Prices {
             DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd");
             final Date date = Objects.isNull(dateQP) ? null : isoFormat.parse(dateQP);
 
-            return Prices.toJson(PricesService.computeCost(connection, typeQP, age, date));
+            return Prices.toJson(service.computeCost(typeQP, age, date));
         });
 
         after((req, res) -> res.type("application/json"));

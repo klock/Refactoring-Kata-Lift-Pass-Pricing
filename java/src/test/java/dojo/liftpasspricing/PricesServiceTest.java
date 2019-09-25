@@ -147,7 +147,7 @@ class PricesServiceTest {
     private int invokeComputeCost(final String type, final Integer age, final String date) {
         int cost = 0;
         try {
-            cost = PricesService.computeCost(connection, type, age, parseDate(date));
+            cost = new PricesService(connection).computeCost(type, age, parseDate(date));
             return cost;
         } catch (SQLException e) {
             e.printStackTrace();

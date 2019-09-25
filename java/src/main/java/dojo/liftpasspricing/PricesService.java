@@ -20,11 +20,16 @@ public class PricesService {
 
     private static final String TYPE_NIGHT = "night";
 
-    static int computeCost(final Connection connection, final String type, final Integer age, final Date date) throws SQLException {
-        final PricesRepository pricesRepository = new PricesRepository(connection);
+    private PricesRepository repository;
 
-        final int basePrice = pricesRepository.getPriceForType(type);
-        boolean isHoliday = pricesRepository.isHoliday(date);
+    public PricesService(final Connection connection) {
+        repository = new PricesRepository(connection);
+    }
+
+    public int computeCost(final String type, final Integer age, final Date date) throws SQLException {
+
+        final int basePrice = repository.getPriceForType(type);
+        boolean isHoliday = repository.isHoliday(date);
 
         double coefficient = computePriceCoefficient(age, date, isHoliday, TYPE_NIGHT.equals(type));
 
@@ -78,7 +83,7 @@ public class PricesService {
         return (int) Math.ceil(cost);
     }
 
-    public static void insertBasePrice(final Connection connection, final int price, final String type) throws SQLException {
-        new PricesRepository(connection).insertBasePrice(price, type);
+    public void insertBasePrice(final int price, final String type) throws SQLException {
+        repository.insertBasePrice(price, type);
     }
 }
