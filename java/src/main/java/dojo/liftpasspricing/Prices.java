@@ -17,17 +17,16 @@ public class Prices {
 
         port(4567);
 
-        put(PricesRoutes.BASE_URI, (req, res) -> {
-            return new PricesController().insertBasePrice(connection, req);
-        });
+        put(PricesRoutes.BASE_URI, (req, res) -> PricesController.insertBasePrice(connection, req));
 
-        get(PricesRoutes.BASE_URI, (req, res) -> {
-            return new PricesController().computeCost(connection, req);
-        });
+        get(PricesRoutes.BASE_URI, (req, res) -> Prices.toJson(PricesController.computeCost(connection, req)));
 
         after((req, res) -> res.type("application/json"));
 
         return connection;
     }
 
+    private static String toJson(int cost) {
+        return "{ \"cost\": "+ cost + "}";
+    }
 }

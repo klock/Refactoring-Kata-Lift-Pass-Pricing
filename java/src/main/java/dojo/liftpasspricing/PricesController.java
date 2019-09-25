@@ -12,113 +12,37 @@
 package dojo.liftpasspricing;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
+import java.util.Objects;
 
 import spark.Request;
 
 public class PricesController {
 
-    public String insertBasePrice(final Connection connection, final Request req) throws SQLException {
-        int liftPassCost = Integer.parseInt(req.queryParams(PricesRoutes.QP.COST));
-        String liftPassType = req.queryParams(PricesRoutes.QP.TYPE);
+    public static String insertBasePrice(final Connection connection, final Request req) throws SQLException {
+        final String costQP = req.queryParams(PricesRoutes.QP.COST);
+        int price = Integer.parseInt(costQP);
+        String type = req.queryParams(PricesRoutes.QP.TYPE);
 
-        try (PreparedStatement stmt = connection.prepareStatement( //
-                "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
-                        "ON DUPLICATE KEY UPDATE cost = ?")) {
-            stmt.setString(1, liftPassType);
-            stmt.setInt(2, liftPassCost);
-            stmt.setInt(3, liftPassCost);
-            stmt.execute();
-        }
+        PricesService.insertBasePrice(connection, price, type);
 
         return "";
     }
 
-    public String computeCost(final Connection connection, final Request req) throws SQLException, ParseException {
-        final Integer age = req.queryParams(PricesRoutes.QP.AGE) != null ? Integer.valueOf(req.queryParams(PricesRoutes.QP.AGE)) : null;
+    public static int computeCost(final Connection connection, final Request req) throws SQLException, ParseException {
+        final String ageQP = req.queryParams(PricesRoutes.QP.AGE);
+        final String typeQP = req.queryParams(PricesRoutes.QP.TYPE);
+        final String dateQP = req.queryParams(PricesRoutes.QP.DATE);
 
-        try (PreparedStatement costStmt = connection.prepareStatement( //
-                "SELECT cost FROM base_price " + //
-                "WHERE type = ?")) {
-            costStmt.setString(1, req.queryParams(PricesRoutes.QP.TYPE));
-            try (ResultSet result = costStmt.executeQuery()) {
-                result.next();
+        final Integer age = ageQP != null ? Integer.valueOf(ageQP) : null;
+        DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd");
+        final Date date = Objects.isNull(dateQP) ? null : isoFormat.parse(dateQP);
 
-                int reduction;
-                boolean isHoliday = false;
-
-                if (age != null && age < 6) {
-                    return "{ \"cost\": 0}";
-                } else {
-                    reduction = 0;
-
-                    if (!req.queryParams(PricesRoutes.QP.TYPE).equals("night")) {
-                        DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd");
-
-                        try (PreparedStatement holidayStmt = connection.prepareStatement( //
-                                "SELECT * FROM holidays")) {
-                            try (ResultSet holidays = holidayStmt.executeQuery()) {
-
-                                while (holidays.next()) {
-                                    Date holiday = holidays.getDate("holiday");
-                                    if (req.queryParams(PricesRoutes.QP.DATE) != null) {
-                                        Date d = isoFormat.parse(req.queryParams(PricesRoutes.QP.DATE));
-                                        if (d.getYear() == holiday.getYear() && //
-                                            d.getMonth() == holiday.getMonth() && //
-                                            d.getDate() == holiday.getDate()) {
-                                            isHoliday = true;
-                                        }
-                                    }
-                                }
-
-                            }
-                        }
-
-                        if (req.queryParams(PricesRoutes.QP.DATE) != null) {
-                            Calendar calendar = Calendar.getInstance();
-                            calendar.setTime(isoFormat.parse(req.queryParams(PricesRoutes.QP.DATE)));
-                            if (!isHoliday && calendar.get(Calendar.DAY_OF_WEEK) == 2) {
-                                reduction = 35;
-                            }
-                        }
-
-                        // TODO apply reduction for others
-                        if (age != null && age < 15) {
-                            return "{ \"cost\": " + (int) Math.ceil(result.getInt("cost") * .7) + "}";
-                        } else {
-                            if (age == null) {
-                                double cost = result.getInt("cost") * (1 - reduction / 100.0);
-                                return "{ \"cost\": " + (int) Math.ceil(cost) + "}";
-                            } else {
-                                if (age > 64) {
-                                    double cost = result.getInt("cost") * .75 * (1 - reduction / 100.0);
-                                    return "{ \"cost\": " + (int) Math.ceil(cost) + "}";
-                                } else {
-                                    double cost = result.getInt("cost") * (1 - reduction / 100.0);
-                                    return "{ \"cost\": " + (int) Math.ceil(cost) + "}";
-                                }
-                            }
-                        }
-                    } else {
-                        if (age != null && age >= 6) {
-                            if (age > 64) {
-                                return "{ \"cost\": " + (int) Math.ceil(result.getInt("cost") * .4) + "}";
-                            } else {
-                                return "{ \"cost\": " + result.getInt("cost") + "}";
-                            }
-                        } else {
-                            return "{ \"cost\": 0}";
-                        }
-                    }
-                }
-            }
-        }
+        return PricesService.computeCost(connection, typeQP, age, date);
     }
+
 }
