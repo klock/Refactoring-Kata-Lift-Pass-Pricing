@@ -36,14 +36,14 @@ class PricesTest {
 
     @Test
     void priceForType1jour() {
-        JsonPath response = queryApplication(null, "1jour");
+        JsonPath response = queryApplication(null, "1jour", null);
 
         assertEquals(35, response.getInt("cost"));
     }
 
     @Test
     void priceForTypeNightAndAgeNull() {
-        JsonPath response = queryApplication(null, "night");
+        JsonPath response = queryApplication(null, "night", null);
 
         assertEquals(0, response.getInt("cost"));
     }
@@ -51,7 +51,7 @@ class PricesTest {
     @ParameterizedTest(name = "{index} Age is {0}")
     @ValueSource(ints = {0, 1, 2, 3, 4, 5})
     void priceForAgeBetween0And6(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "1jour");
+        JsonPath response = queryApplication(String.valueOf(age), "1jour", null);
 
         assertEquals(0, response.getInt("cost"));
     }
@@ -59,7 +59,7 @@ class PricesTest {
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom6To64")
     void priceForTypeNightAndAgeBetween6And63(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "night");
+        JsonPath response = queryApplication(String.valueOf(age), "night", null);
 
         assertEquals(19, response.getInt("cost"));
     }
@@ -67,7 +67,7 @@ class PricesTest {
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom65To100")
     void priceForTypeNightAndAgeGreaterThan5(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "night");
+        JsonPath response = queryApplication(String.valueOf(age), "night", null);
 
         assertEquals(8, response.getInt("cost"));
     }
@@ -75,7 +75,7 @@ class PricesTest {
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom6To14")
     void priceForTypeDifferentFromNightAndAgeLessThan15(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "1jour");
+        JsonPath response = queryApplication(String.valueOf(age), "1jour", null);
 
         assertEquals(25, response.getInt("cost"));
     }
@@ -83,7 +83,7 @@ class PricesTest {
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom15To64")
     void priceForTypeDifferentFromNightAndAgeBetween15And64(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "1jour");
+        JsonPath response = queryApplication(String.valueOf(age), "1jour", null);
 
         assertEquals(35, response.getInt("cost"));
     }
@@ -91,7 +91,7 @@ class PricesTest {
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom65To100")
     void priceForTypeDifferentFromNightAndAgeGreaterThan64(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "1jour");
+        JsonPath response = queryApplication(String.valueOf(age), "1jour", null);
 
         assertEquals(27, response.getInt("cost"));
     }
@@ -112,7 +112,7 @@ class PricesTest {
         return IntStream.range(6, 14);
     }
 
-    private JsonPath queryApplication(String age, String type) {
+    private JsonPath queryApplication(String age, String type, final String date) {
         RequestSpecification when = RestAssured
                 .given().port(4567)
                 .when();
@@ -124,6 +124,10 @@ class PricesTest {
         // Add query parameter 'type' if present
         if (StringUtils.isNotBlank(type)) {
             when = when.param("type", type);
+        }
+        // Add query parameter 'date' if present
+        if (StringUtils.isNotBlank(date)) {
+            when = when.param("date", date);
         }
 
         return
