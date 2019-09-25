@@ -14,4 +14,11 @@ package dojo.liftpasspricing;
 public interface PricesRoutes {
 
     String BASE_URI = "/prices";
+
+    interface QP {
+        String COST = "cost";
+        String TYPE = "type";
+        String AGE = "age";
+        String DATE = "date";
+    }
 }

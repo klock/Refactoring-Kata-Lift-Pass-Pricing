@@ -26,8 +26,8 @@ import spark.Request;
 public class PricesController {
 
     public String insertBasePrice(final Connection connection, final Request req) throws SQLException {
-        int liftPassCost = Integer.parseInt(req.queryParams("cost"));
-        String liftPassType = req.queryParams("type");
+        int liftPassCost = Integer.parseInt(req.queryParams(PricesRoutes.QP.COST));
+        String liftPassType = req.queryParams(PricesRoutes.QP.TYPE);
 
         try (PreparedStatement stmt = connection.prepareStatement( //
                 "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
@@ -42,12 +42,12 @@ public class PricesController {
     }
 
     public String computeCost(final Connection connection, final Request req) throws SQLException, ParseException {
-        final Integer age = req.queryParams("age") != null ? Integer.valueOf(req.queryParams("age")) : null;
+        final Integer age = req.queryParams(PricesRoutes.QP.AGE) != null ? Integer.valueOf(req.queryParams(PricesRoutes.QP.AGE)) : null;
 
         try (PreparedStatement costStmt = connection.prepareStatement( //
                 "SELECT cost FROM base_price " + //
                 "WHERE type = ?")) {
-            costStmt.setString(1, req.queryParams("type"));
+            costStmt.setString(1, req.queryParams(PricesRoutes.QP.TYPE));
             try (ResultSet result = costStmt.executeQuery()) {
                 result.next();
 
@@ -59,7 +59,7 @@ public class PricesController {
                 } else {
                     reduction = 0;
 
-                    if (!req.queryParams("type").equals("night")) {
+                    if (!req.queryParams(PricesRoutes.QP.TYPE).equals("night")) {
                         DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd");
 
                         try (PreparedStatement holidayStmt = connection.prepareStatement( //
@@ -68,8 +68,8 @@ public class PricesController {
 
                                 while (holidays.next()) {
                                     Date holiday = holidays.getDate("holiday");
-                                    if (req.queryParams("date") != null) {
-                                        Date d = isoFormat.parse(req.queryParams("date"));
+                                    if (req.queryParams(PricesRoutes.QP.DATE) != null) {
+                                        Date d = isoFormat.parse(req.queryParams(PricesRoutes.QP.DATE));
                                         if (d.getYear() == holiday.getYear() && //
                                             d.getMonth() == holiday.getMonth() && //
                                             d.getDate() == holiday.getDate()) {
@@ -81,9 +81,9 @@ public class PricesController {
                             }
                         }
 
-                        if (req.queryParams("date") != null) {
+                        if (req.queryParams(PricesRoutes.QP.DATE) != null) {
                             Calendar calendar = Calendar.getInstance();
-                            calendar.setTime(isoFormat.parse(req.queryParams("date")));
+                            calendar.setTime(isoFormat.parse(req.queryParams(PricesRoutes.QP.DATE)));
                             if (!isHoliday && calendar.get(Calendar.DAY_OF_WEEK) == 2) {
                                 reduction = 35;
                             }
