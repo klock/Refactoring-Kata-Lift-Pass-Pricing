@@ -36,64 +36,64 @@ class PricesTest {
 
     @Test
     void priceForType1jour() {
-        JsonPath response = queryApplication(null, "1jour", null);
+        int cost = queryApplication(null, "1jour", null);
 
-        assertEquals(35, response.getInt("cost"));
+        assertEquals(35, cost);
     }
 
     @Test
     void priceForTypeNightAndAgeNull() {
-        JsonPath response = queryApplication(null, "night", null);
+        int cost = queryApplication(null, "night", null);
 
-        assertEquals(0, response.getInt("cost"));
+        assertEquals(0, cost);
     }
 
     @ParameterizedTest(name = "{index} Age is {0}")
     @ValueSource(ints = {0, 1, 2, 3, 4, 5})
     void priceForAgeBetween0And6(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "1jour", null);
+        int cost = queryApplication(String.valueOf(age), "1jour", null);
 
-        assertEquals(0, response.getInt("cost"));
+        assertEquals(0, cost);
     }
 
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom6To64")
     void priceForTypeNightAndAgeBetween6And63(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "night", null);
+        int cost = queryApplication(String.valueOf(age), "night", null);
 
-        assertEquals(19, response.getInt("cost"));
+        assertEquals(19, cost);
     }
 
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom65To100")
     void priceForTypeNightAndAgeGreaterThan5(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "night", null);
+        int cost = queryApplication(String.valueOf(age), "night", null);
 
-        assertEquals(8, response.getInt("cost"));
+        assertEquals(8, cost);
     }
 
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom6To14")
     void priceForTypeDifferentFromNightAndAgeLessThan15(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "1jour", null);
+        int cost = queryApplication(String.valueOf(age), "1jour", null);
 
-        assertEquals(25, response.getInt("cost"));
+        assertEquals(25, cost);
     }
 
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom15To64")
     void priceForTypeDifferentFromNightAndAgeBetween15And64(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "1jour", null);
+        int cost = queryApplication(String.valueOf(age), "1jour", null);
 
-        assertEquals(35, response.getInt("cost"));
+        assertEquals(35, cost);
     }
 
     @ParameterizedTest(name = "Age is {0}")
     @MethodSource("rangeFrom65To100")
     void priceForTypeDifferentFromNightAndAgeGreaterThan64(int age) {
-        JsonPath response = queryApplication(String.valueOf(age), "1jour", null);
+        int cost = queryApplication(String.valueOf(age), "1jour", null);
 
-        assertEquals(27, response.getInt("cost"));
+        assertEquals(27, cost);
     }
 
     private static IntStream rangeFrom6To64() {
@@ -112,7 +112,7 @@ class PricesTest {
         return IntStream.range(6, 14);
     }
 
-    private JsonPath queryApplication(String age, String type, final String date) {
+    private int queryApplication(String age, String type, final String date) {
         RequestSpecification when = RestAssured
                 .given().port(4567)
                 .when();
@@ -130,14 +130,16 @@ class PricesTest {
             when = when.param("date", date);
         }
 
-        return
+        final JsonPath jsonResponse =
                 when
                         .get("/prices")
                 .then()
                         .assertThat()
-                            .statusCode(200)
-                        .assertThat()
-                            .contentType("application/json")
-                        .extract().jsonPath();
+                        .statusCode(200)
+                .assertThat()
+                        .contentType("application/json")
+                .extract().jsonPath();
+
+        return jsonResponse.getInt("cost");
     }
 }
