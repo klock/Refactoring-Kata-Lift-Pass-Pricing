@@ -18,60 +18,60 @@ import java.util.Date;
 
 public class PricesService {
 
-    static int computeCost(final Connection connection, final String type, final Integer age, final Date date) throws SQLException {
+    private static final String TYPE_NIGHT = "night";
 
-        final int basePrice = new PricesRepository().getPriceForType(connection, type);
+    static int computeCost(final Connection connection, final String type, final Integer age, final Date date) throws SQLException {
+        final PricesRepository pricesRepository = new PricesRepository();
+
+        final int basePrice = pricesRepository.getPriceForType(connection, type);
+        boolean isHoliday = pricesRepository.isHoliday(connection, date);
+
+        double coefficient = computePriceCoefficient(age, date, isHoliday, TYPE_NIGHT.equals(type));
+
+        return adjustPrice(applyCoefficient(basePrice, coefficient));
+    }
+
+    private static double computePriceCoefficient(final Integer age, final Date date, final boolean isHoliday, final boolean isTypeNight) {
+        double coefficient = 1.0;
 
         if (age != null && age < 6) {
-            return 0;
+            coefficient = 0.0;
         } else {
-            int reduction = 0;
-
-            if (!type.equals("night")) {
-
-                boolean isHoliday = new PricesRepository().isHoliday(connection, date);
+            if (!isTypeNight) {
 
                 if (date != null) {
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTime(date);
                     if (!isHoliday && calendar.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY) {
-                        reduction = 35;
+                        coefficient = 0.65;
                     }
                 }
 
                 // TODO apply reduction for others
                 if (age != null && age < 15) {
-                    return (int) Math.ceil(basePrice * .7);
+                    coefficient = .7;
                 } else {
-                    if (age == null) {
-                        double cost = basePrice * (1 - reduction / 100.0);
-                        return (int) Math.ceil(cost);
-                    } else {
-                        if (age > 64) {
-                            double cost = basePrice * .75 * (1 - reduction / 100.0);
-                            return (int) Math.ceil(cost);
-                        } else {
-                            double cost = basePrice * (1 - reduction / 100.0);
-                            return (int) Math.ceil(cost);
-                        }
+                    if (age != null && age > 64) {
+                        coefficient = .75 * coefficient;
                     }
                 }
             } else {
                 if (age != null && age >= 6) {
                     if (age > 64) {
-                        return (int) Math.ceil(basePrice * .4);
+                        coefficient = .4;
                     } else {
-                        return (int) Math.ceil(basePrice);
+                        coefficient = 1;
                     }
                 } else {
-                    return 0;
+                    coefficient = 0;
                 }
             }
         }
+        return coefficient;
     }
 
-    private static double applyReduction(int basePrice, int reduction) {
-        return basePrice * (1 - reduction / 100.0);
+    private static double applyCoefficient(double basePrice, double coefficient) {
+        return basePrice * coefficient;
     }
 
     private static int adjustPrice(final double cost) {
