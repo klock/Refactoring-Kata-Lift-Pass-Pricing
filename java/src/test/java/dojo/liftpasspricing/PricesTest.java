@@ -96,6 +96,38 @@ class PricesTest {
         assertEquals(27, cost);
     }
 
+    @ParameterizedTest(name = "Age is {0}")
+    @MethodSource("rangeFrom6To14")
+    void priceForDateIsHolidayAndTypeDifferentFromNightAndAgeLessThan15(int age) {
+        int cost = queryApplication(String.valueOf(age), "1jour", "2019-02-18");
+
+        assertEquals(25, cost);
+    }
+
+    @ParameterizedTest(name = "Age is {0}")
+    @MethodSource("rangeFrom15To64")
+    void priceForDateIsHolidayAndTypeDifferentFromNightAndAgeBetween15And64(int age) {
+        int cost = queryApplication(String.valueOf(age), "1jour", "2019-02-25");
+
+        assertEquals(35, cost);
+    }
+
+    @ParameterizedTest(name = "Age is {0}")
+    @MethodSource("rangeFrom65To100")
+    void priceForDateIsHolidayAndTypeDifferentFromNightAndAgeGreaterThan64(int age) {
+        int cost = queryApplication(String.valueOf(age), "1jour", "2019-03-04");
+
+        assertEquals(27, cost);
+    }
+
+    @ParameterizedTest(name = "Age is {0}")
+    @MethodSource("rangeFrom65To100")
+    void priceForDateIsHolidayAndMondayAndTypeDifferentFromNightAndAgeGreaterThan64(int age) {
+        int cost = queryApplication(String.valueOf(age), "1jour", "2019-09-09");
+
+        assertEquals(18, cost);
+    }
+
     private static IntStream rangeFrom6To64() {
         return IntStream.range(6, 64);
     }
