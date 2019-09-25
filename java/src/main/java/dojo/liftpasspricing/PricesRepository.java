@@ -19,7 +19,13 @@ import java.util.Date;
 
 public class PricesRepository {
 
-    public void insertBasePrice(final Connection connection, final int price, final String type) throws SQLException {
+    private Connection connection;
+
+    public PricesRepository(final Connection connection) {
+        this.connection = connection;
+    }
+
+    public void insertBasePrice(final int price, final String type) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement( //
                 "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
                         "ON DUPLICATE KEY UPDATE cost = ?")) {
@@ -30,7 +36,7 @@ public class PricesRepository {
         }
     }
 
-    public int getPriceForType(final Connection connection, final String type) throws SQLException {
+    public int getPriceForType(final String type) throws SQLException {
         try (PreparedStatement costStmt = connection.prepareStatement( //
                 "SELECT cost FROM base_price " + //
                         "WHERE type = ?")) {
@@ -42,7 +48,7 @@ public class PricesRepository {
         }
     }
 
-    public boolean isHoliday(final Connection connection, final Date date) throws SQLException {
+    public boolean isHoliday(final Date date) throws SQLException {
         boolean isHoliday = false;
         try (PreparedStatement holidayStmt = connection.prepareStatement( //
                 "SELECT * FROM holidays")) {
