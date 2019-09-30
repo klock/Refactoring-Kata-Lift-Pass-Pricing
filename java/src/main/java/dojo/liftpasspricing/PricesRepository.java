@@ -12,6 +12,7 @@
 package dojo.liftpasspricing;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,19 +20,14 @@ import java.util.Date;
 
 public class PricesRepository {
 
-    private Connection connection;
-
-    public PricesRepository(final Connection connection) {
-        this.connection = connection;
-    }
-
     public void insertBasePrice(final int price, final String type) throws SQLException {
-        try (PreparedStatement stmt = prepareStatementForInsertion(type, price)) {
+        try (Connection connection = getConnection();
+             PreparedStatement stmt = prepareStatementForInsertion(type, price, connection)) {
             stmt.execute();
         }
     }
 
-    private PreparedStatement prepareStatementForInsertion(final String type, final int price) throws SQLException {
+    private PreparedStatement prepareStatementForInsertion(final String type, final int price, final Connection connection) throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(
                 "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
                         "ON DUPLICATE KEY UPDATE cost = ?");
@@ -42,14 +38,15 @@ public class PricesRepository {
     }
 
     public int getPriceForType(final String type) throws SQLException {
-        try (PreparedStatement costStmt = prepareStatementForPriceForType(type);
+        try (Connection connection = getConnection();
+             PreparedStatement costStmt = prepareStatementForPriceForType(type, connection);
              ResultSet result = costStmt.executeQuery()) {
             result.next();
             return result.getInt("cost");
         }
     }
 
-    private PreparedStatement prepareStatementForPriceForType(final String type) throws SQLException {
+    private PreparedStatement prepareStatementForPriceForType(final String type, final Connection connection) throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(
                 "SELECT cost FROM base_price " + //
                         "WHERE type = ?");
@@ -59,7 +56,8 @@ public class PricesRepository {
 
     public boolean isHoliday(final Date date) throws SQLException {
         boolean isHoliday = false;
-        try (PreparedStatement holidayStmt = prepareStatementForHoliday();
+        try (Connection connection = getConnection();
+             PreparedStatement holidayStmt = prepareStatementForHoliday(connection);
              ResultSet holidays = holidayStmt.executeQuery()) {
             while (holidays.next()) {
                 Date holiday = holidays.getDate("holiday");
@@ -73,9 +71,19 @@ public class PricesRepository {
         return isHoliday;
     }
 
-    private PreparedStatement prepareStatementForHoliday() throws SQLException {
+    private PreparedStatement prepareStatementForHoliday(final Connection connection) throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(
                 "SELECT * FROM holidays");
         return preparedStatement;
+    }
+
+    private Connection getConnection() throws SQLException {
+        // TODO get those from a property file
+        final String host = "localhost";
+        final String port = "3306";
+        final String schema = "lift_pass";
+        final String user = "root";
+        final String password = "mysql";
+        return DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + schema, user, password);
     }
 }

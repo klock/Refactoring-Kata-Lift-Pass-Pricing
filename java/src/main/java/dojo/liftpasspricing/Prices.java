@@ -15,10 +15,10 @@ import java.util.Objects;
 
 public class Prices {
 
-    public static Connection createApp() throws SQLException {
+    public static void createApp() throws SQLException {
 
         final Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/lift_pass", "root", "mysql");
-        final PricesService service = new PricesService(connection);
+        final PricesService service = new PricesService();
 
         port(4567);
 
@@ -45,8 +45,6 @@ public class Prices {
         });
 
         after((req, res) -> res.type("application/json"));
-
-        return connection;
     }
 
     private static String toJson(int cost) {

@@ -11,7 +11,6 @@
  */
 package dojo.liftpasspricing;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
@@ -22,8 +21,8 @@ public class PricesService {
 
     private PricesRepository repository;
 
-    public PricesService(final Connection connection) {
-        repository = new PricesRepository(connection);
+    public PricesService() {
+        repository = new PricesRepository();
     }
 
     public int computeCost(final String type, final Integer age, final Date date) throws SQLException {

@@ -2,8 +2,6 @@ package dojo.liftpasspricing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -12,8 +10,6 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,25 +17,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class PricesServiceTest {
 
-    private Connection connection;
-
-    @BeforeEach
-    void prepare() throws SQLException {
-        connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/lift_pass", "root", "mysql");
-    }
-
-    @AfterEach
-    void stopApplication() throws SQLException {
-        connection.close();
-    }
-
     @Test
     void priceForType1jour() {
         final int cost = invokeComputeCost("1jour", null, null);
 
         assertEquals(35, cost);
     }
-
 
     @Test
     void priceForTypeNightAndAgeNull() {
@@ -147,7 +130,7 @@ class PricesServiceTest {
     private int invokeComputeCost(final String type, final Integer age, final String date) {
         int cost = 0;
         try {
-            cost = new PricesService(connection).computeCost(type, age, parseDate(date));
+            cost = new PricesService().computeCost(type, age, parseDate(date));
             return cost;
         } catch (SQLException e) {
             e.printStackTrace();

@@ -2,7 +2,6 @@ package dojo.liftpasspricing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.stream.IntStream;
 
@@ -21,17 +20,14 @@ import spark.Spark;
 
 class PricesTest {
 
-    private Connection connection;
-
     @BeforeEach
     void createPrices() throws SQLException {
-        connection = Prices.createApp();
+        Prices.createApp();
     }
 
     @AfterEach
-    void stopApplication() throws SQLException {
+    void stopApplication() {
         Spark.stop();
-        connection.close();
     }
 
     @Test
