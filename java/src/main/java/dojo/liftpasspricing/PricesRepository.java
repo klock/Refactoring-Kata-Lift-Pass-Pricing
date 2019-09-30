@@ -26,46 +26,56 @@ public class PricesRepository {
     }
 
     public void insertBasePrice(final int price, final String type) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement( //
-                "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
-                        "ON DUPLICATE KEY UPDATE cost = ?")) {
-            stmt.setString(1, type);
-            stmt.setInt(2, price);
-            stmt.setInt(3, price);
+        try (PreparedStatement stmt = prepareStatementForInsertion(type, price)) {
             stmt.execute();
         }
     }
 
+    private PreparedStatement prepareStatementForInsertion(final String type, final int price) throws SQLException {
+        final PreparedStatement preparedStatement = connection.prepareStatement(
+                "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
+                        "ON DUPLICATE KEY UPDATE cost = ?");
+        preparedStatement.setString(1, type);
+        preparedStatement.setInt(2, price);
+        preparedStatement.setInt(3, price);
+        return preparedStatement;
+    }
+
     public int getPriceForType(final String type) throws SQLException {
-        try (PreparedStatement costStmt = connection.prepareStatement( //
-                "SELECT cost FROM base_price " + //
-                        "WHERE type = ?")) {
-            costStmt.setString(1, type);
-            try (ResultSet result = costStmt.executeQuery()) {
-                result.next();
-                return result.getInt("cost");
-            }
+        try (PreparedStatement costStmt = prepareStatementForPriceForType(type);
+             ResultSet result = costStmt.executeQuery()) {
+            result.next();
+            return result.getInt("cost");
         }
+    }
+
+    private PreparedStatement prepareStatementForPriceForType(final String type) throws SQLException {
+        final PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT cost FROM base_price " + //
+                        "WHERE type = ?");
+        preparedStatement.setString(1, type);
+        return preparedStatement;
     }
 
     public boolean isHoliday(final Date date) throws SQLException {
         boolean isHoliday = false;
-        try (PreparedStatement holidayStmt = connection.prepareStatement( //
-                "SELECT * FROM holidays")) {
-            try (ResultSet holidays = holidayStmt.executeQuery()) {
-
-                while (holidays.next()) {
-                    Date holiday = holidays.getDate("holiday");
-                    if (date != null && (date.getYear() == holiday.getYear() && //
-                            date.getMonth() == holiday.getMonth() && //
-                            date.getDate() == holiday.getDate())) {
-                        isHoliday = true;
-                    }
+        try (PreparedStatement holidayStmt = prepareStatementForHoliday();
+             ResultSet holidays = holidayStmt.executeQuery()) {
+            while (holidays.next()) {
+                Date holiday = holidays.getDate("holiday");
+                if (date != null && (date.getYear() == holiday.getYear() && //
+                        date.getMonth() == holiday.getMonth() && //
+                        date.getDate() == holiday.getDate())) {
+                    isHoliday = true;
                 }
-
             }
         }
         return isHoliday;
     }
 
+    private PreparedStatement prepareStatementForHoliday() throws SQLException {
+        final PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT * FROM holidays");
+        return preparedStatement;
+    }
 }
