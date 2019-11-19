@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -19,6 +20,13 @@ import dojo.liftpasspricing.domain.Cost;
 import dojo.liftpasspricing.infrastructure.MemoryRepositories;
 
 class PricesServiceTest {
+
+    private PricesService pricesService;
+
+    @BeforeEach
+    void setUp() throws ParseException {
+        pricesService = new PricesService(new MemoryRepositories());
+    }
 
     @Test
     void priceForType1jour() {
@@ -114,6 +122,28 @@ class PricesServiceTest {
         assertEquals(18, cost);
     }
 
+    @Test
+    void insertPriceFor1WeekAndQueryIt() {
+        final String type = "1week";
+        final int price = 432;
+        invokeInsertPrice(type, price);
+
+        final int costResult = invokeComputeCost(type, null, null);
+
+        assertEquals(price, costResult);
+    }
+
+    @Test
+    void insertPriceFor1WeekEndAndQueryIt() {
+        final String type = "1weekend";
+        final int price = 76;
+        invokeInsertPrice(type, price);
+
+        final int costResult = invokeComputeCost(type, null, null);
+
+        assertEquals(price, costResult);
+    }
+
     private static IntStream rangeFrom6To64() {
         return IntStream.range(6, 64);
     }
@@ -133,9 +163,9 @@ class PricesServiceTest {
     private int invokeComputeCost(final String type, final Integer age, final String date) {
         Cost cost = new Cost(0);
         try {
-            cost = new PricesService(new MemoryRepositories()).computeCost(type, age, parseDate(date));
+            cost = pricesService.computeCost(type, age, parseDate(date));
             return cost.getCost();
-        } catch (SQLException | ParseException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return cost.getCost();
@@ -150,5 +180,13 @@ class PricesServiceTest {
             e.printStackTrace();
         }
         return date;
+    }
+
+    private void invokeInsertPrice(String type, int price) {
+        try {
+            pricesService.insertBasePrice(price, type);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

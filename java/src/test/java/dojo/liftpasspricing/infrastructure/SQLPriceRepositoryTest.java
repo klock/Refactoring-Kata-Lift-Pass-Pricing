@@ -34,14 +34,20 @@ class SQLPriceRepositoryTest {
     }
 
     @Test
-    void insertAndQueryPrice() throws SQLException {
+    void insertAndQueryPriceAndUpdateAndQueryAgain() throws SQLException {
         final String type = "plop";
-        final int price = 11;
+        final int firstPrice = 11;
+        final int secondPrice = 15;
 
-        insertInRepository(price, type);
-        final int priceResult = queryRepository(type);
+        insertInRepository(firstPrice, type);
+       int priceResult = queryRepository(type);
 
-        assertEquals(price, priceResult);
+        assertEquals(firstPrice, priceResult);
+
+        insertInRepository(secondPrice, type);
+        priceResult = queryRepository(type);
+
+        assertEquals(secondPrice, priceResult);
     }
 
     private int queryRepository(final String type) throws SQLException {
