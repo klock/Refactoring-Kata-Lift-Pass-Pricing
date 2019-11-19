@@ -79,7 +79,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>dojo.liftpasspricing.Main</mainClass>
+                    <mainClass>dojo.liftpasspricing.boundary.Main</mainClass>
                 </configuration>
             </plugin>
             <plugin>
@@ -88,7 +88,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Main-Class>dojo.liftpasspricing.Main</Main-Class>
+                            <Main-Class>dojo.liftpasspricing.boundary.Main</Main-Class>
                         </manifestEntries>
                     </archive>
                     <descriptorRefs>
