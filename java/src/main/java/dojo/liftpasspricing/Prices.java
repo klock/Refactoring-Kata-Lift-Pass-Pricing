@@ -41,13 +41,11 @@ public class Prices {
             DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd");
             final Date date = Objects.isNull(dateQP) ? null : isoFormat.parse(dateQP);
 
-            return Prices.toJson(service.computeCost(typeQP, age, date));
+            final Cost cost = service.computeCost(typeQP, age, date);
+            return cost.toJson();
         });
 
         after((req, res) -> res.type("application/json"));
     }
 
-    private static String toJson(int cost) {
-        return "{ \"cost\": "+ cost + "}";
-    }
 }

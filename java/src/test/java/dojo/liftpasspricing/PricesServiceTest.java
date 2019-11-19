@@ -128,14 +128,14 @@ class PricesServiceTest {
     }
 
     private int invokeComputeCost(final String type, final Integer age, final String date) {
-        int cost = 0;
+        Cost cost = new Cost(0);
         try {
             cost = new PricesService().computeCost(type, age, parseDate(date));
-            return cost;
+            return cost.getCost();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return cost;
+        return cost.getCost();
     }
 
     Date parseDate(String dateStr) {

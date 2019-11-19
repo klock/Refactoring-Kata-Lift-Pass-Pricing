@@ -25,14 +25,14 @@ public class PricesService {
         repository = new PricesRepository();
     }
 
-    public int computeCost(final String type, final Integer age, final Date date) throws SQLException {
+    public Cost computeCost(final String type, final Integer age, final Date date) throws SQLException {
 
         final int basePrice = repository.getPriceForType(type);
         boolean isHoliday = repository.isHoliday(date);
 
         double coefficient = computePriceCoefficient(age, date, isHoliday, TYPE_NIGHT.equals(type));
 
-        return adjustPrice(applyCoefficient(basePrice, coefficient));
+        return new Cost(adjustPrice(applyCoefficient(basePrice, coefficient)));
     }
 
     private static double computePriceCoefficient(final Integer age, final Date date, final boolean isHoliday, final boolean isTypeNight) {
