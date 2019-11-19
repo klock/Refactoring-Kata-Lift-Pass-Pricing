@@ -1,4 +1,4 @@
-package dojo.liftpasspricing;
+package dojo.liftpasspricing.boundary;
 
 import java.sql.SQLException;
 

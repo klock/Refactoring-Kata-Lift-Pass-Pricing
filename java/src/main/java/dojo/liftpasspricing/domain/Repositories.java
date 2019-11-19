@@ -9,7 +9,11 @@
  *        The copyright notice above does not evidence any
  *       actual or intended publication of such source code.
  */
-package dojo.liftpasspricing;
+package dojo.liftpasspricing.domain;
 
 public interface Repositories {
+
+    HolidayRepository getHolidayRepository();
+
+    PriceRepository getPriceRepository();
 }

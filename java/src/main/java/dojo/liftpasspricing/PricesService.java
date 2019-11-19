@@ -15,28 +15,37 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
 
+import dojo.liftpasspricing.domain.Cost;
+import dojo.liftpasspricing.domain.Repositories;
+import dojo.liftpasspricing.infrastructure.SQLRepositories;
+
 public class PricesService {
 
     private static final String TYPE_NIGHT = "night";
 
-    private PricesRepository repository;
+    private Repositories repositories;
 
     public PricesService() {
-        repository = new PricesRepository();
+        repositories = new SQLRepositories();
+    }
+
+    public PricesService(Repositories repositories) {
+        this.repositories = repositories;
     }
 
     public Cost computeCost(final String type, final Integer age, final Date date) throws SQLException {
 
-        final int basePrice = repository.getPriceForType(type);
-        boolean isHoliday = repository.isHoliday(date);
+        final int basePrice = repositories.getPriceRepository().getPriceForType(type);
 
-        double coefficient = computePriceCoefficient(age, date, isHoliday, TYPE_NIGHT.equals(type));
+        double coefficient = computePriceCoefficient(age, date, TYPE_NIGHT.equals(type));
 
         return new Cost(adjustPrice(applyCoefficient(basePrice, coefficient)));
     }
 
-    private static double computePriceCoefficient(final Integer age, final Date date, final boolean isHoliday, final boolean isTypeNight) {
+    private double computePriceCoefficient(final Integer age, final Date date, final boolean isTypeNight) throws SQLException {
         double coefficient = 1.0;
+
+        boolean isHoliday = repositories.getHolidayRepository().isHoliday(date);
 
         if (age != null && age < 6) {
             coefficient = 0.0;
@@ -83,6 +92,6 @@ public class PricesService {
     }
 
     public void insertBasePrice(final int price, final String type) throws SQLException {
-        repository.insertBasePrice(price, type);
+        repositories.getPriceRepository().insertBasePrice(price, type);
     }
 }

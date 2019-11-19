@@ -9,16 +9,12 @@
  *        The copyright notice above does not evidence any
  *       actual or intended publication of such source code.
  */
-package dojo.liftpasspricing;
+package dojo.liftpasspricing.domain;
 
-public interface PricesRoutes {
+import java.sql.SQLException;
 
-    String BASE_URI = "/prices";
+public interface PriceRepository {
+    int getPriceForType(final String type) throws SQLException;
 
-    interface QP {
-        String COST = "cost";
-        String TYPE = "type";
-        String AGE = "age";
-        String DATE = "date";
-    }
+    void insertBasePrice(final int price, final String type) throws SQLException;
 }

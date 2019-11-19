@@ -9,7 +9,7 @@
  *        The copyright notice above does not evidence any
  *       actual or intended publication of such source code.
  */
-package dojo.liftpasspricing;
+package dojo.liftpasspricing.domain;
 
 public class Cost {
     int cost;
@@ -18,7 +18,7 @@ public class Cost {
         this.cost = cost;
     }
 
-    String toJson() {
+    public String toJson() {
         return "{ \"cost\": "+ cost + "}";
     }
 

@@ -1,4 +1,4 @@
-package dojo.liftpasspricing;
+package dojo.liftpasspricing.boundary;
 
 import static spark.Spark.after;
 import static spark.Spark.get;
@@ -12,6 +12,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
+
+import dojo.liftpasspricing.PricesService;
+import dojo.liftpasspricing.domain.Cost;
 
 public class Prices {
 

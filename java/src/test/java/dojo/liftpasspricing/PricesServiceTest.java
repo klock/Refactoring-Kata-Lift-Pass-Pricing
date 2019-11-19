@@ -15,6 +15,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import dojo.liftpasspricing.domain.Cost;
+import dojo.liftpasspricing.infrastructure.MemoryRepositories;
+
 class PricesServiceTest {
 
     @Test
@@ -130,9 +133,9 @@ class PricesServiceTest {
     private int invokeComputeCost(final String type, final Integer age, final String date) {
         Cost cost = new Cost(0);
         try {
-            cost = new PricesService().computeCost(type, age, parseDate(date));
+            cost = new PricesService(new MemoryRepositories()).computeCost(type, age, parseDate(date));
             return cost.getCost();
-        } catch (SQLException e) {
+        } catch (SQLException | ParseException e) {
             e.printStackTrace();
         }
         return cost.getCost();

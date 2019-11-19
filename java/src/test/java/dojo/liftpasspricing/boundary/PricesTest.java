@@ -1,4 +1,4 @@
-package dojo.liftpasspricing;
+package dojo.liftpasspricing.boundary;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
