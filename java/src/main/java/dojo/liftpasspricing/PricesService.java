@@ -25,7 +25,7 @@ public class PricesService {
 
     private Repositories repositories;
 
-    public PricesService() {
+    public PricesService() throws SQLException {
         repositories = new SQLRepositories();
     }
 

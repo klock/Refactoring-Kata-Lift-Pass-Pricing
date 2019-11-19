@@ -5,8 +5,6 @@ import static spark.Spark.get;
 import static spark.Spark.port;
 import static spark.Spark.put;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -20,7 +18,6 @@ public class Prices {
 
     public static void createApp() throws SQLException {
 
-        final Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/lift_pass", "root", "mysql");
         final PricesService service = new PricesService();
 
         port(4567);

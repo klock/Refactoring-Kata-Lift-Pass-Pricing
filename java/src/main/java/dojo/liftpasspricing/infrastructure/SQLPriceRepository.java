@@ -20,16 +20,21 @@ import dojo.liftpasspricing.domain.PriceRepository;
 
 public class SQLPriceRepository implements PriceRepository {
 
+    private Connection connection;
+
+    public SQLPriceRepository(final Connection connection) {
+        this.connection = connection;
+    }
+
     public int getPriceForType(final String type) throws SQLException {
-        try (Connection connection = SQLRepositories.getConnection();
-             PreparedStatement costStmt = prepareStatementForPriceForType(type, connection);
+        try (PreparedStatement costStmt = prepareStatementForPriceForType(type);
              ResultSet result = costStmt.executeQuery()) {
             result.next();
             return result.getInt("cost");
         }
     }
 
-    private PreparedStatement prepareStatementForPriceForType(final String type, final Connection connection) throws SQLException {
+    private PreparedStatement prepareStatementForPriceForType(final String type) throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(
                 "SELECT cost FROM base_price " + //
                         "WHERE type = ?");
@@ -38,13 +43,12 @@ public class SQLPriceRepository implements PriceRepository {
     }
 
     public void insertBasePrice(final int price, final String type) throws SQLException {
-        try (Connection connection = SQLRepositories.getConnection();
-             PreparedStatement stmt = this.prepareStatementForInsertion(type, price, connection)) {
+        try (PreparedStatement stmt = this.prepareStatementForInsertion(type, price)) {
             stmt.execute();
         }
     }
 
-    private PreparedStatement prepareStatementForInsertion(final String type, final int price, final Connection connection) throws SQLException {
+    private PreparedStatement prepareStatementForInsertion(final String type, final int price) throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(
                 "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
                         "ON DUPLICATE KEY UPDATE cost = ?");

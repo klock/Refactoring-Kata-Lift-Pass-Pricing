@@ -21,9 +21,14 @@ import dojo.liftpasspricing.domain.HolidayRepository;
 
 public class SQLHolidayRepository implements HolidayRepository {
 
+    private Connection connection;
+
+    public SQLHolidayRepository(final Connection connection) {
+        this.connection = connection;
+    }
+
     public boolean isHoliday(final Date date) throws SQLException {
-        try (Connection connection = SQLRepositories.getConnection();
-             PreparedStatement holidayStmt = prepareStatementForHoliday(connection);
+        try (PreparedStatement holidayStmt = prepareStatementForHoliday();
              ResultSet holidays = holidayStmt.executeQuery()) {
             while (holidays.next()) {
                 Date holiday = holidays.getDate("holiday");
@@ -42,7 +47,7 @@ public class SQLHolidayRepository implements HolidayRepository {
                 && date.getDate() == holiday.getDate());
     }
 
-    private PreparedStatement prepareStatementForHoliday(final Connection connection) throws SQLException {
+    private PreparedStatement prepareStatementForHoliday() throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(
                 "SELECT * FROM holidays");
         return preparedStatement;
