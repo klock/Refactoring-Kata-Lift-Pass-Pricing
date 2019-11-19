@@ -8,14 +8,21 @@ import static spark.Spark.put;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
+import dojo.liftpasspricing.infrastructure.SQLHolidayRepository;
+import dojo.liftpasspricing.infrastructure.SQLPriceRepository;
+import spark.Request;
+
 public class Prices {
+
+    public static final String NIGHT = "night";
+    public static final String DATE_PATTERN = "yyyy-MM-dd";
 
     public static Connection createApp() throws SQLException {
 
@@ -25,11 +32,11 @@ public class Prices {
 
         put("/prices", (req, res) -> {
             int liftPassCost = Integer.parseInt(req.queryParams("cost"));
-            String liftPassType = req.queryParams("type");
+            String liftPassType = getTypeParam(req);
 
             try (PreparedStatement stmt = connection.prepareStatement( //
                     "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
-                    "ON DUPLICATE KEY UPDATE cost = ?")) {
+                            "ON DUPLICATE KEY UPDATE cost = ?")) {
                 stmt.setString(1, liftPassType);
                 stmt.setInt(2, liftPassCost);
                 stmt.setInt(3, liftPassCost);
@@ -40,84 +47,12 @@ public class Prices {
         });
 
         get("/prices", (req, res) -> {
-            final Integer age = req.queryParams("age") != null ? Integer.valueOf(req.queryParams("age")) : null;
+            final Integer age = getAgeParam(req) != null ? Integer.valueOf(getAgeParam(req)) : null;
+            final String type = getTypeParam(req);
+            final Date dateParam = getDateParam(req);
 
-            try (PreparedStatement costStmt = connection.prepareStatement( //
-                    "SELECT cost FROM base_price " + //
-                    "WHERE type = ?")) {
-                costStmt.setString(1, req.queryParams("type"));
-                try (ResultSet result = costStmt.executeQuery()) {
-                    result.next();
 
-                    int reduction;
-                    boolean isHoliday = false;
-
-                    if (age != null && age < 6) {
-                        return "{ \"cost\": 0}";
-                    } else {
-                        reduction = 0;
-
-                        if (!req.queryParams("type").equals("night")) {
-                            DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd");
-
-                            try (PreparedStatement holidayStmt = connection.prepareStatement( //
-                                    "SELECT * FROM holidays")) {
-                                try (ResultSet holidays = holidayStmt.executeQuery()) {
-
-                                    while (holidays.next()) {
-                                        Date holiday = holidays.getDate("holiday");
-                                        if (req.queryParams("date") != null) {
-                                            Date d = isoFormat.parse(req.queryParams("date"));
-                                            if (d.getYear() == holiday.getYear() && //
-                                                d.getMonth() == holiday.getMonth() && //
-                                                d.getDate() == holiday.getDate()) {
-                                                isHoliday = true;
-                                            }
-                                        }
-                                    }
-
-                                }
-                            }
-
-                            if (req.queryParams("date") != null) {
-                                Calendar calendar = Calendar.getInstance();
-                                calendar.setTime(isoFormat.parse(req.queryParams("date")));
-                                if (!isHoliday && calendar.get(Calendar.DAY_OF_WEEK) == 2) {
-                                    reduction = 35;
-                                }
-                            }
-
-                            // TODO apply reduction for others
-                            if (age != null && age < 15) {
-                                return "{ \"cost\": " + (int) Math.ceil(result.getInt("cost") * .7) + "}";
-                            } else {
-                                if (age == null) {
-                                    double cost = result.getInt("cost") * (1 - reduction / 100.0);
-                                    return "{ \"cost\": " + (int) Math.ceil(cost) + "}";
-                                } else {
-                                    if (age > 64) {
-                                        double cost = result.getInt("cost") * .75 * (1 - reduction / 100.0);
-                                        return "{ \"cost\": " + (int) Math.ceil(cost) + "}";
-                                    } else {
-                                        double cost = result.getInt("cost") * (1 - reduction / 100.0);
-                                        return "{ \"cost\": " + (int) Math.ceil(cost) + "}";
-                                    }
-                                }
-                            }
-                        } else {
-                            if (age != null && age >= 6) {
-                                if (age > 64) {
-                                    return "{ \"cost\": " + (int) Math.ceil(result.getInt("cost") * .4) + "}";
-                                } else {
-                                    return "{ \"cost\": " + result.getInt("cost") + "}";
-                                }
-                            } else {
-                                return "{ \"cost\": 0}";
-                            }
-                        }
-                    }
-                }
-            }
+            return getPrice(connection, age, type, dateParam);
         });
 
         after((req, res) -> {
@@ -125,6 +60,73 @@ public class Prices {
         });
 
         return connection;
+    }
+
+    private static Object getPrice(final Connection connection, final Integer age, final String type, final Date dateParam) throws SQLException, ParseException {
+        if (age != null && age < 6) {
+            return costToJson(0);
+        }
+        return costToJson(calculateCost(connection, age, type, dateParam).getCost());
+    }
+
+    private static Cost calculateCost(final Connection connection, final Integer age, final String type, final Date dateParam) throws SQLException {
+        int reduction = 0;
+        final int costForType = new SQLPriceRepository().getCostForType(connection, type);
+        double cost;
+        if (!type.equals(NIGHT)) {
+
+            boolean isHoliday = new SQLHolidayRepository().isHoliday(connection, dateParam);
+
+            if (dateParam != null) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(dateParam);
+                if (!isHoliday && calendar.get(Calendar.DAY_OF_WEEK) == 2) {
+                    reduction = 35;
+                }
+            }
+
+            if (age != null && age < 15) {
+                cost = costForType * .7;
+            } else {
+                if (age == null) {
+                    cost = costForType * (1 - reduction / 100.0);
+                } else {
+                    if (age > 64) {
+                        cost = costForType * .75 * (1 - reduction / 100.0);
+                    } else {
+                        cost = costForType * (1 - reduction / 100.0);
+                    }
+                }
+            }
+        } else {
+            if (age != null && age >= 6) {
+                if (age > 64) {
+                    cost = costForType * .4;
+                } else {
+                    cost = costForType;
+                }
+            } else {
+                cost = 0;
+            }
+        }
+        return new Cost(cost);
+    }
+
+    private static String costToJson(final double cost) {
+        return "{ \"cost\": " + (int) Math.ceil(cost) + "}";
+    }
+
+    private static Date getDateParam(final Request req) throws ParseException {
+        DateFormat isoFormat = new SimpleDateFormat(DATE_PATTERN);
+        return req.queryParams("date") != null ? isoFormat.parse(req.queryParams("date")) : null;
+    }
+
+    private static String getTypeParam(final Request req) {
+        return req.queryParams("type");
+    }
+
+    private static String getAgeParam(final Request req) {
+        return req.queryParams("age");
     }
 
 }
