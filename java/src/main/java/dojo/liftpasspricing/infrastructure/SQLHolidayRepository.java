@@ -19,27 +19,37 @@ import java.util.Date;
 
 public class SQLHolidayRepository {
     public static final String HOLIDAY = "holiday";
+    private Connection connection;
 
-    public boolean isHoliday(final Connection connection, final Date dateParam) throws SQLException {
-        try (PreparedStatement holidayStmt = connection.prepareStatement(
-                "SELECT * FROM holidays")) {
-            try (ResultSet holidays = holidayStmt.executeQuery()) {
-
-                while (holidays.next()) {
-                    Date holiday = holidays.getDate(HOLIDAY);
-                    if (dateParam != null && isSameDay(dateParam, holiday)) {
-                        return true;
-                    }
-                }
-
-            }
-        }
-        return false;
+    public SQLHolidayRepository(final Connection connection) {
+        this.connection = connection;
     }
 
     private boolean isSameDay(final Date dateParam, final Date holiday) {
         return dateParam.getYear() == holiday.getYear() &&
                 dateParam.getMonth() == holiday.getMonth() &&
                 dateParam.getDate() == holiday.getDate();
+    }
+
+    public boolean isHoliday(final Date dateParam) {
+        try {
+            try (PreparedStatement holidayStmt = connection.prepareStatement(
+                    "SELECT * FROM holidays")) {
+                try (ResultSet holidays = holidayStmt.executeQuery()) {
+
+                    while (holidays.next()) {
+                        Date holiday = holidays.getDate(HOLIDAY);
+                        if (dateParam != null && isSameDay(dateParam, holiday)) {
+                            return true;
+                        }
+                    }
+
+                }
+            }
+            return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false; // TODO
+        }
     }
 }

@@ -7,7 +7,6 @@ import static spark.Spark.put;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -15,8 +14,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import dojo.liftpasspricing.infrastructure.SQLHolidayRepository;
-import dojo.liftpasspricing.infrastructure.SQLPriceRepository;
 import spark.Request;
 
 public class Prices {
@@ -34,14 +31,8 @@ public class Prices {
             int liftPassCost = Integer.parseInt(req.queryParams("cost"));
             String liftPassType = getTypeParam(req);
 
-            try (PreparedStatement stmt = connection.prepareStatement( //
-                    "INSERT INTO base_price (type, cost) VALUES (?, ?) " + //
-                            "ON DUPLICATE KEY UPDATE cost = ?")) {
-                stmt.setString(1, liftPassType);
-                stmt.setInt(2, liftPassCost);
-                stmt.setInt(3, liftPassCost);
-                stmt.execute();
-            }
+            Repositories.SingletonHolder.INSTANCE = new Repositories(connection);
+            Repositories.price().persist(liftPassCost, liftPassType);
 
             return "";
         });
@@ -51,31 +42,31 @@ public class Prices {
             final String type = getTypeParam(req);
             final Date dateParam = getDateParam(req);
 
-
-            return getPrice(connection, age, type, dateParam);
+            Repositories.SingletonHolder.INSTANCE = new Repositories(connection);
+            return getPrice(age, type, dateParam);
         });
 
         after((req, res) -> {
             res.type("application/json");
         });
 
-        return connection;
+        return Repositories.SingletonHolder.INSTANCE.connection;
     }
 
-    private static Object getPrice(final Connection connection, final Integer age, final String type, final Date dateParam) throws SQLException, ParseException {
+    private static Object getPrice(final Integer age, final String type, final Date dateParam) {
         if (age != null && age < 6) {
             return costToJson(0);
         }
-        return costToJson(calculateCost(connection, age, type, dateParam).getCost());
+        return costToJson(calculateCost(age, type, dateParam).getCost());
     }
 
-    private static Cost calculateCost(final Connection connection, final Integer age, final String type, final Date dateParam) throws SQLException {
+    private static Cost calculateCost(final Integer age, final String type, final Date dateParam) {
         int reduction = 0;
-        final int costForType = new SQLPriceRepository().getCostForType(connection, type);
+        final int costForType = Repositories.price().getCostForType(type);
         double cost;
         if (!type.equals(NIGHT)) {
 
-            boolean isHoliday = new SQLHolidayRepository().isHoliday(connection, dateParam);
+            boolean isHoliday = Repositories.holiday().isHoliday(dateParam);
 
             if (dateParam != null) {
                 Calendar calendar = Calendar.getInstance();
